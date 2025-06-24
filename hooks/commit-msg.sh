@@ -12,7 +12,6 @@ commit_msg=$(cat "$commit_msg_file")
 # tipo(scope opcional): descripción
 pattern="^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(\([^)]+\))?: .+"
 
-echo "DEBUG: commit_msg='$commit_msg'"
 # validar que el mensaje cumpla con el formato
 if ! echo "$commit_msg" | grep -Eq "$pattern"; then
   echo "Formato de commit inválido"
