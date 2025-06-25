@@ -1,3 +1,27 @@
+"""
+changelog_generator.py
+
+Script para parsear commits en un repositorio Git priorizando commits convencionales
+a partir del último tag y guardar la información en formato JSON.
+
+Uso:
+    python changelog_generator.py [-d RUTA_REPOSITORIO] [-o ARCHIVO_SALIDA]
+
+Parámetros:
+    -d, --dir     Ruta al repositorio Git a analizar (por defecto: el directorio actual).
+    -o, --out Ruta donde se guardará el archivo JSON generado (por defecto: parsed_commits.json).
+
+Ejemplo:
+    python changelog_generator.py -d ./mi_repositorio -o ./salidas/commits.json
+
+Requiere:
+    - Python 3.6+
+    - GitPython
+
+Autor:
+    Diego Akira García Rojas - Akira-13
+"""
+
 import json
 import re
 import argparse
@@ -84,15 +108,24 @@ def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parsea commits desde el último tag en un repositorio Git.",
                                      "\nAlmacena los commits parseados en parsed_commits.json")
+    # Argumentos
     parser.add_argument(
         "-d", "--dir",
         type=str,
         default=".",
         help="Ruta al repositorio Git (por defecto: directorio actual '.')"
     )
+    parser.add_argument(
+        "-o", "--out",
+        type=str,
+        default="parsed_commits.json",
+        help="Ruta del archivo de salida (por defecto: parsed_commits.json)"
+    )
+
     args = parser.parse_args()
 
-    parsed_commits = get_commits_since_last_tag()
-    with open("parsed_commits.json", "w", encoding="utf-8") as f:
+    # Lectura de commits
+    parsed_commits = get_commits_since_last_tag(args.dir)
+    with open(args.out, "w", encoding="utf-8") as f:
         json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
     print("Commits parseados guardados en 'parsed_commits.json'")
