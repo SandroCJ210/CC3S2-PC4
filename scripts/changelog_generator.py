@@ -31,7 +31,7 @@ from git import Repo
 from typing import Dict, List
 
 # Regex para parsear mensajes convencionales de commits.
-COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(\([^)]+\))?: .+'
+COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(\([^)]+\))?: (.+)$'
 
 def parse_commit_message(commit_msg: str, commit_hash: str) -> Dict:
     """
@@ -106,8 +106,8 @@ def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
     return parsed_commits
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Parsea commits desde el último tag en un repositorio Git.",
-                                     "\nAlmacena los commits parseados en parsed_commits.json")
+    parser = argparse.ArgumentParser(description=("Parsea commits desde el último tag en un repositorio Git.",
+                                     "\nAlmacena los commits parseados en parsed_commits.json"))
     # Argumentos
     parser.add_argument(
         "-d", "--dir",
