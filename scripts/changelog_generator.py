@@ -39,9 +39,9 @@ def parse_commit_message(commit_msg: str, commit_hash: str) -> Dict:
 
     Argumentos
     ----------
-    commit_msg
+    commit_msg: str
       Mensaje de commit a analizar
-    commit_hash
+    commit_hash: str
       Hash del commit
 
     Retorna
@@ -80,12 +80,12 @@ def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
 
     Argumentos
     ----------
-    repo_path
+    repo_path: str
       Ruta relativa del repositorio a analizar
 
     Retorna
     -------
-    Lista de diccionarios
+    parsed_commits: List[Dict]
        Lista de diccionarios con información de commits
     """
     repo = Repo(repo_path)
