@@ -16,6 +16,7 @@ pattern="^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(\([^)]+
 if ! echo "$commit_msg" | grep -Eq "$pattern"; then
   echo "Formato de commit inválido"
   echo "Usar el formato válido: tipo(scope opcional): descripción"
+  echo "Referencia: https://www.conventionalcommits.org/en/v1.0.0/"
   exit 1
 fi
 

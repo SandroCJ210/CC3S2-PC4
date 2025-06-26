@@ -19,6 +19,7 @@ invalids=$(echo "$commits" | grep -Ev "$pattern")
 if [ -n "$invalids" ]; then
   echo "Existen commits pendientes con formato inválido:"
   echo "$invalids"
+  echo "Referencia: https://www.conventionalcommits.org/en/v1.0.0/"
   exit 1
 fi
 
