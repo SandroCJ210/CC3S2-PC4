@@ -1,5 +1,7 @@
 # CC3S2-PC4
 
+Se usó un repositorio aparte para probar este proyecto, se añadió ese repositorio como el submódulo "aux-repo".
+
 ## Scripts
 
 ### `changelog_generator.py`
