@@ -21,6 +21,7 @@ Requiere:
 Autor:
     Diego Akira García Rojas - Akira-13
     Sandro Alfredo Carrillo Jordán - SandroCJ210
+    Ariana Camila Lopez Julcarima - aclj20
 """
 
 import json
@@ -106,6 +107,7 @@ def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
     print(f"Se encontraron {len(commits)} commits desde el último tag: {last_tag}")
     parsed_commits = []
 
+    # Si no hay commits nuevos, se detiene el flujo de generación de changelog y tag
     if not commits:
         print(f"No hay commits nuevos desde el último tag ({last_tag}).")
         return parsed_commits
