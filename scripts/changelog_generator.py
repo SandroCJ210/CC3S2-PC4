@@ -29,6 +29,7 @@ import argparse
 # De esta forma se evita trabajar directamente con comandos git en subprocesos.
 from git import Repo
 from typing import Dict, List
+from collections import defaultdict
 
 # Regex para parsear mensajes convencionales de commits.
 COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(\([^)]+\))?: (.+)$'
@@ -99,11 +100,58 @@ def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
     print(f"Se encontraron {len(commits)} commits desde el último tag: {last_tag}")
 
     parsed_commits = []
-    for commit in reversed(commits): # antiguo a reciente
+    for commit in reversed(commits): 
         parsed = parse_commit_message(commit.message, commit.hexsha)
         parsed_commits.append(parsed)
 
     return parsed_commits
+
+def generar_changelog_md(parsed_commits: List[Dict], archivo_salida: str = "CHANGELOG.md") -> None:
+    """
+    Genera un archivo CHANGELOG.md agrupado por tipo de commit.
+
+    Argumentos
+    ----------
+    parsed_commits : List[Dict]
+        Lista de commits parseados
+    archivo_salida : str
+        Nombre del archivo markdown de salida
+    """
+    tipo_to_titulo = {
+        "feat": "### Features",
+        "fix": "### Bug Fixes",
+        "chore": "### Chores",
+        "docs": "### Documentation",
+        "refactor": "### Refactors",
+        "test": "### Tests",
+        "style": "### Styles",
+        "perf": "### Performance",
+        "ci": "### CI",
+        "build": "### Build",
+        "revert": "### Reverts",
+        "otro": "### Others"
+    }
+
+    # Agrupar los commits por tipo
+    agrupados = defaultdict(list)
+    for c in parsed_commits:
+        tipo = c["mensaje"]["tipo"]
+        descripcion = c["mensaje"]["descripcion"]
+        agrupados[tipo].append(f"- {descripcion}")
+
+    # Crear el contenido del archivo markdown
+    md_lines = ["# Changelog\n"]
+    for tipo in tipo_to_titulo:
+        if tipo in agrupados:
+            md_lines.append(tipo_to_titulo[tipo])
+            md_lines.extend(agrupados[tipo])
+            md_lines.append("")  
+
+    # Escribir el archivo
+    with open(archivo_salida, "w", encoding="utf-8") as f:
+        f.write("\n".join(md_lines))
+
+    print(f"Changelog generado en '{archivo_salida}'")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=("Parsea commits desde el último tag en un repositorio Git.",
@@ -129,3 +177,6 @@ if __name__ == "__main__":
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
     print("Commits parseados guardados en 'parsed_commits.json'")
+
+    # Generar archivo CHANGELOG.md
+    generar_changelog_md(parsed_commits)
