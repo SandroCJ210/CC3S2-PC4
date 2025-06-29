@@ -20,7 +20,8 @@ python changelog_generator.py [-d RUTA_REPOSITORIO] [-o ARCHIVO_SALIDA]
 #### Dependencias
 
 El script depende de la librería `GitPython` para analizar los repositorios sin depender de llamadas directas al comando Git.
-### Git Hooks
+
+## Git Hooks
 
 Ejecuta el siguiente script para instalar los hooks en tu entorno local
 ```bash
@@ -31,3 +32,38 @@ Este script configura automáticamente dos hooks personalizados:
 - pre-commit: se ejecuta antes de que un commit se registre, para validar el formato del mensaje.
 
 - pre-push: se ejecuta antes de hacer un git push y revisa que todos los commits pendientes por subir cumplan con el formato.
+
+## Tests
+
+Para ejecutar los tests de este repositorio, solo es necesario ejecutar `pytest` en la raíz del proyecto.
+
+### 1. `test_parse_commits`
+
+* **Tipo**: Unitario, parametrizado.
+* **Propósito**: Verifica el correcto parseo de mensajes de commit según la convención Conventional Commits.
+
+### 2. `test_get_commits`
+
+* **Tipo**: Integración con fixture `temp_git_repo_basic`
+* **Propósito**: Asegura que se obtienen correctamente los commits realizados después del último tag en el repositorio temporal.
+
+### 3. `test_repo_no_tags`
+
+* **Tipo**: Integración con fixture `temp_git_repo_no_tags`
+* **Propósito**: Verifica que se lanza un `ValueError` si el repositorio no tiene ningún tag.
+
+### 4. `test_repo_create_tag`
+
+* **Tipo**: Integración con fixture `temp_git_repo_no_tags`
+* **Propósito**: Comprueba que `crear_tag(...)` añade correctamente un nuevo tag al repositorio Git.
+
+### 5. `test_calcular_siguiente_version`
+
+* **Tipo**: Unitario, parametrizado por fixture
+* **Fixtures utilizados**: `commits_fix_only`, `commits_with_feat`, `commits_breaking_change`
+* **Propósito**: Valida que `calcular_siguiente_version(...)` produce la versión semántica correcta (patch, minor o major) en función de los tipos de commits.
+* **Casos cubiertos**:
+
+  * Solo fixes → incremento de parche.
+  * Fixes + feat → incremento menor.
+  * BREAKING CHANGE → incremento mayor.
