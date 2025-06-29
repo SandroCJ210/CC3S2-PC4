@@ -3,10 +3,18 @@
 Se usó un repositorio aparte para probar este proyecto, se añadió ese repositorio como el submódulo "aux-repo".
 
 ## Scripts
+### `release_flow.sh`
+Script principal que orquesta el flujo de liberación local del proyecto. Ejecuta automáticamente el changelog_generator.py, muestra una vista previa del archivo CHANGELOG.md, detecta la nueva versión generada y permite al usuario confirmar si desea crear (o reetiquetar) y pushear el tag correspondiente al repositorio remoto.
+
+#### Uso
+
+```bash
+bash release_flow.sh
+```
 
 ### `changelog_generator.py`
 
-Script principal para parsear commits de un repositorio Git. Se priorizan los commits convencionales, considerando cualquier otro commit en la categoría "otro". La salida es almacenada como un archivo JSON con los commits ordenados desde el más antiguo al más reciente. Además, el script genera automáticamente un archivo CHANGELOG.md con los commits agrupados por tipo (feat, fix, etc.), calcula la siguiente versión siguiendo el versionado semántico (MAJOR.MINOR.PATCH) según los cambios detectados desde el último tag y crea un nuevo tag Git local con la versión correspondiente.
+Script para parsear commits de un repositorio Git. Se priorizan los commits convencionales, considerando cualquier otro commit en la categoría "otro". La salida es almacenada como un archivo JSON con los commits ordenados desde el más antiguo al más reciente. Además, el script genera automáticamente un archivo CHANGELOG.md con los commits agrupados por tipo (feat, fix, etc.), calcula la siguiente versión siguiendo el versionado semántico (MAJOR.MINOR.PATCH) según los cambios detectados desde el último tag y crea un nuevo tag Git local con la versión correspondiente.
 También se calculan métricas de flujo usando los commits como referencia para saber el flujo de trabajo del equipo. Estas métricas son dos, throughput, que se calcula como el número de commits promedio por día, y task distribution, que es la proporción por cada tipo de trabajo o tarea realizada. Estos resultados son guardados en un documento metrics.json.
 
 #### Uso
