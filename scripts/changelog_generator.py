@@ -32,7 +32,7 @@ from typing import Dict, List
 from collections import defaultdict
 
 # Regex para parsear mensajes convencionales de commits.
-COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(\([^)]+\))?: (.+)$'
+COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$'
 
 def parse_commit_message(commit_msg: str, commit_hash: str) -> Dict:
     """
@@ -57,9 +57,12 @@ def parse_commit_message(commit_msg: str, commit_hash: str) -> Dict:
     match = re.match(COMMIT_REGEX, header)
 
     if match:
-        tipo = match.group(1)
-        escopo = match.group(2)[1:-1] if match.group(2) else None
-        descripcion = match.group(3)
+        tipo_base = match.group(1)
+        es_breaking = match.group(2) == "!"
+        escopo = match.group(3)[1:-1] if match.group(3) else None
+        descripcion = match.group(4)
+
+        tipo = "BREAKING CHANGE" if es_breaking else tipo_base
     else:
         tipo = "otro"
         escopo = None
@@ -129,6 +132,7 @@ def generar_changelog_md(parsed_commits: List[Dict], archivo_salida: str = "CHAN
         "ci": "### CI",
         "build": "### Build",
         "revert": "### Reverts",
+        "BREAKING CHANGE": "### Breaking Changes",
         "otro": "### Others"
     }
 
