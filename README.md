@@ -6,7 +6,7 @@ Se usó un repositorio aparte para probar este proyecto, se añadió ese reposit
 
 ### `changelog_generator.py`
 
-Script principal para parsear commits de un repositorio Git. Se priorizan los commits convencionales, considerando cualquier otro commit en la categoría "otro". La salida es almacenada como un archivo JSON con los commits ordenados desde el más antiguo al más reciente.
+Script principal para parsear commits de un repositorio Git. Se priorizan los commits convencionales, considerando cualquier otro commit en la categoría "otro". La salida es almacenada como un archivo JSON con los commits ordenados desde el más antiguo al más reciente. Además, el script genera automáticamente un archivo CHANGELOG.md con los commits agrupados por tipo (feat, fix, etc.), calcula la siguiente versión siguiendo el versionado semántico (MAJOR.MINOR.PATCH) según los cambios detectados desde el último tag y crea un nuevo tag Git local con la versión correspondiente.
 
 #### Uso
 
