@@ -109,7 +109,7 @@ def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
 
     return parsed_commits
 
-def generar_changelog_md(parsed_commits: List[Dict], archivo_salida: str = "CHANGELOG.md") -> None:
+def generar_changelog_md(parsed_commits: List[Dict], version: str, archivo_salida: str = "CHANGELOG.md") -> None:
     """
     Genera un archivo CHANGELOG.md agrupado por tipo de commit.
 
@@ -117,6 +117,8 @@ def generar_changelog_md(parsed_commits: List[Dict], archivo_salida: str = "CHAN
     ----------
     parsed_commits : List[Dict]
         Lista de commits parseados
+    vesrion: str
+        Nueva versión 
     archivo_salida : str
         Nombre del archivo markdown de salida
     """
@@ -144,7 +146,7 @@ def generar_changelog_md(parsed_commits: List[Dict], archivo_salida: str = "CHAN
         agrupados[tipo].append(f"- {descripcion}")
 
     # Crear el contenido del archivo markdown
-    md_lines = ["# Changelog\n"]
+    md_lines = ["# Changelog\n", f"## {version}\n"]
     for tipo in tipo_to_titulo:
         if tipo in agrupados:
             md_lines.append(tipo_to_titulo[tipo])
@@ -156,6 +158,60 @@ def generar_changelog_md(parsed_commits: List[Dict], archivo_salida: str = "CHAN
         f.write("\n".join(md_lines))
 
     print(f"Changelog generado en '{archivo_salida}'")
+
+def calcular_siguiente_version(commits: List[Dict], tag_actual: str) -> str:
+    """
+    Calcula la siguiente versión semántica a partir del último tag y commits.
+
+    Argumentos
+    ----------
+    commits : List[Dict]
+        Lista de commits parseados desde el último tag
+    tag_actual : str
+        Último tag encontrado en el repositorio 
+    
+    Retorna
+    -------
+    str
+        La siguiente versión sugerida 
+    """
+    mayor, menor, parche = map(int, tag_actual.lstrip("v").split("."))
+
+    tipos = [c["mensaje"]["tipo"] for c in commits]
+
+    # Si hay BREAKING CHANGE, subir versión mayor
+    if "BREAKING CHANGE" in tipos:
+        mayor += 1
+        menor = 0
+        parche = 0
+    # Si hay feats pero no breaking, subir versión menor
+    elif "feat" in tipos:
+        menor += 1
+        parche = 0
+    # Si solo hay fixes, subir parche
+    elif "fix" in tipos:
+        parche += 1
+    else:
+        # Si no hay cambios relevantes, se mantiene la versión
+        pass
+
+    return f"v{mayor}.{menor}.{parche}"
+
+def crear_tag(repo_path: str, nueva_version: str):
+    """
+    Crea un nuevo tag Git en el repositorio local con la versión proporcionada
+
+    Argumentos
+    ----------
+    repo_path : str
+        Ruta al repositorio Git 
+    nueva_version : str
+        Nombre del tag a crear
+    """
+    repo = Repo(repo_path)
+    # Crear un nuevo tag en el commit HEAD
+    repo.create_tag(nueva_version)
+    print(f"Tag '{nueva_version}' creado.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=("Parsea commits desde el último tag en un repositorio Git.",
@@ -182,5 +238,14 @@ if __name__ == "__main__":
         json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
     print("Commits parseados guardados en 'parsed_commits.json'")
 
+    repo = Repo(args.dir)
+    # Obtener todos los tags ordenados por fecha de creación
+    tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+    # Obtener el último tag existente o usar "v0.0.0" si no hay ninguno
+    ultimo_tag = tags[-1].name if tags else "v0.0.0"
+    # Calcular la siguiente versión del proyecto 
+    nueva_version = calcular_siguiente_version(parsed_commits, ultimo_tag)
     # Generar archivo CHANGELOG.md
-    generar_changelog_md(parsed_commits)
+    generar_changelog_md(parsed_commits, nueva_version)
+    # Crear un nuevo tag Git en el repositorio local con la versión calculada
+    crear_tag(args.dir, nueva_version)
