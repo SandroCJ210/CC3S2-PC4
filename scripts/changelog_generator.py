@@ -26,6 +26,7 @@ Autor:
 import json
 import re
 import argparse
+import sys
 # Se utiliza la librería GitPython para interactuar con los repositorios a través de una API.
 # De esta forma se evita trabajar directamente con comandos git en subprocesos.
 from git import Repo
@@ -103,11 +104,15 @@ def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
     commits = list(repo.iter_commits(f"{last_tag}..HEAD"))
 
     print(f"Se encontraron {len(commits)} commits desde el último tag: {last_tag}")
-
     parsed_commits = []
-    for commit in reversed(commits): 
-        parsed = parse_commit_message(commit.message, commit.hexsha)
-        parsed_commits.append(parsed)
+
+    if not commits:
+        print(f"No hay commits nuevos desde el último tag ({last_tag}).")
+        return parsed_commits
+    else:
+        for commit in reversed(commits): 
+            parsed = parse_commit_message(commit.message, commit.hexsha)
+            parsed_commits.append(parsed)
 
     return parsed_commits
 
@@ -157,7 +162,7 @@ def generar_changelog_md(parsed_commits: List[Dict], version: str, archivo_salid
 
     # Escribir el archivo
     with open(archivo_salida, "w", encoding="utf-8") as f:
-        f.write("\\n".join(md_lines))
+        f.write("\n".join(md_lines))
 
     print(f"Changelog generado en '{archivo_salida}'")
 
@@ -211,6 +216,9 @@ def crear_tag(repo_path: str, nueva_version: str):
         Nombre del tag a crear
     """
     repo = Repo(repo_path)
+    if nueva_version in [t.name for t in repo.tags]:
+        print(f"El tag '{nueva_version}' ya existe. No se creará uno nuevo.")
+        return
     # Crear un nuevo tag en el commit HEAD
     repo.create_tag(nueva_version)
     print(f"Tag '{nueva_version}' creado.")
@@ -264,17 +272,25 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--out", type=str, default="parsed_commits.json", help="Ruta del archivo de salida JSON")
     args = parser.parse_args()
 
-    # Lectura de commits
-    parsed_commits = get_commits_since_last_tag(args.dir)
-    with open(args.out, "w", encoding="utf-8") as f:
-        json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
-    print("Commits parseados guardados en", args.out)
-
+    # Abrir el repositorio Git
     repo = Repo(args.dir)
+
     # Obtener todos los tags ordenados por fecha de creación
     tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
     # Obtener el último tag existente o usar "v0.0.0" si no hay ninguno
     ultimo_tag = tags[-1].name if tags else "v0.0.0"
+
+    # Lectura de commits
+    parsed_commits = get_commits_since_last_tag(args.dir)
+    # Detener si no hay commits nuevos
+    if not parsed_commits:
+        print("No se encontraron commits nuevos. No se generará changelog ni tag.")
+        sys.exit(0)
+    # Guardar commits parseados como JSON
+    with open(args.out, "w", encoding="utf-8") as f:
+        json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
+    print("Commits parseados guardados en", args.out)
+
     # Calcular la siguiente versión del proyecto 
     nueva_version = calcular_siguiente_version(parsed_commits, ultimo_tag)
     # Generar archivo CHANGELOG.md
