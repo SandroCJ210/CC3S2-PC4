@@ -20,16 +20,18 @@ Requiere:
 
 Autor:
     Diego Akira García Rojas - Akira-13
+    Sandro Alfredo Carrillo Jordán - SandroCJ210
 """
 
 import json
 import re
 import argparse
-# Se utiliza la librería GitPython para interactuar con lso repositorios a través de una API.
+# Se utiliza la librería GitPython para interactuar con los repositorios a través de una API.
 # De esta forma se evita trabajar directamente con comandos git en subprocesos.
 from git import Repo
 from typing import Dict, List
 from collections import defaultdict
+from datetime import datetime
 
 # Regex para parsear mensajes convencionales de commits.
 COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$'
@@ -155,7 +157,7 @@ def generar_changelog_md(parsed_commits: List[Dict], version: str, archivo_salid
 
     # Escribir el archivo
     with open(archivo_salida, "w", encoding="utf-8") as f:
-        f.write("\n".join(md_lines))
+        f.write("\\n".join(md_lines))
 
     print(f"Changelog generado en '{archivo_salida}'")
 
@@ -213,30 +215,60 @@ def crear_tag(repo_path: str, nueva_version: str):
     repo.create_tag(nueva_version)
     print(f"Tag '{nueva_version}' creado.")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=("Parsea commits desde el último tag en un repositorio Git.",
-                                     "\nAlmacena los commits parseados en parsed_commits.json"))
-    # Argumentos
-    parser.add_argument(
-        "-d", "--dir",
-        type=str,
-        default=".",
-        help="Ruta al repositorio Git (por defecto: directorio actual '.')"
-    )
-    parser.add_argument(
-        "-o", "--out",
-        type=str,
-        default="parsed_commits.json",
-        help="Ruta del archivo de salida (por defecto: parsed_commits.json)"
-    )
+def calcular_metricas_flujo(parsed_commits: List[Dict], archivo_salida: str = "metrics.json", repo: Repo = None):
+    """
+    Calcula métricas de flujo del proyecto a partir de los commits obtenidos desde el último tag.
 
+    Métricas generadas:
+        - Throughput (commits por día): número promedio de commits realizados por día entre el primer y último commit del rango analizado.
+        - Task distribution: distribución de commits por tipo (feat, fix, chore, etc.).
+
+    Argumentos
+    ----------
+    parsed_commits : List[Dict]
+        Lista de commits parseados, con información como tipo y hash.
+    archivo_salida : str
+        Ruta del archivo JSON donde se guardarán las métricas calculadas.
+    repo : Repo
+        Objeto que representa al repositorio.
+    """
+
+    fechas = [
+        repo.commit(c["commit"]).committed_datetime
+        for c in parsed_commits
+    ]
+    fecha_inicio = min(fechas)
+    fecha_fin = max(fechas)
+
+    dias_rango = (fecha_fin - fecha_inicio).days or 1
+    throughput = len(parsed_commits) / dias_rango
+    tipo_distribution = defaultdict(int)
+    
+    for commit in parsed_commits:
+        tipo = commit["mensaje"]["tipo"]
+        tipo_distribution[tipo] += 1
+
+    metricas = {
+        "throughput_commits_por_dia": round(throughput, 2),
+        "task_distribution": dict(tipo_distribution)
+    }
+
+    with open(archivo_salida, "w", encoding="utf-8") as f:
+        json.dump(metricas, f, indent=2, ensure_ascii=False)
+
+    print(f"Métricas de flujo guardadas en '{archivo_salida}'")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--dir", type=str, default=".", help="Ruta al repositorio Git (por defecto: directorio actual '.')")
+    parser.add_argument("-o", "--out", type=str, default="parsed_commits.json", help="Ruta del archivo de salida JSON")
     args = parser.parse_args()
 
     # Lectura de commits
     parsed_commits = get_commits_since_last_tag(args.dir)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
-    print("Commits parseados guardados en 'parsed_commits.json'")
+    print("Commits parseados guardados en", args.out)
 
     repo = Repo(args.dir)
     # Obtener todos los tags ordenados por fecha de creación
@@ -249,3 +281,6 @@ if __name__ == "__main__":
     generar_changelog_md(parsed_commits, nueva_version)
     # Crear un nuevo tag Git en el repositorio local con la versión calculada
     crear_tag(args.dir, nueva_version)
+
+    # Calcular métricas de flujo
+    calcular_metricas_flujo(parsed_commits, repo=repo)
