@@ -50,12 +50,12 @@ def test_parse_commits(mensaje, tipo, escopo, descripcion, cuerpo):
     assert result["mensaje"]["cuerpo"] == cuerpo
 
 
-def test_get_commits(temp_git_repo_basic):
+def test_get_commits(temp_git_repo):
     """
     Probar funcionalidad de obtención de commits en repositorio.
     """
-    repo_path = temp_git_repo_basic["repo_path"]
-    expected = temp_git_repo_basic["expected_commits"]
+    repo_path = temp_git_repo["repo_path"]
+    expected = temp_git_repo["expected_commits"]
 
     commits = cg.get_commits_since_last_tag(str(repo_path))
 
@@ -78,6 +78,7 @@ def test_repo_no_tags(temp_git_repo_no_tags):
     with pytest.raises(ValueError, match="tags"):
         commits = cg.get_commits_since_last_tag(str(repo_path))
 
+
 def test_repo_create_tag(temp_git_repo_no_tags):
     """
     Probar creación de tag de crear_tag en un repositorio.
@@ -88,11 +89,13 @@ def test_repo_create_tag(temp_git_repo_no_tags):
     repo_tags = sorted(Repo(repo_path).tags, key=lambda t: t.commit.committed_datetime)
     assert repo_tags[-1].name == created_tag
 
+
 # Utiliza los fixtures de conftest.py
 # No se necesita probar toda la lógica de parseo de commits, por lo que crear
 # un repositorio temporal no es necesario.
 @pytest.mark.parametrize(
-    "version_commits", ["commits_fix_only", "commits_with_feat", "commits_breaking_change"]
+    "version_commits",
+    ["commits_fix_only", "commits_with_feat", "commits_breaking_change"],
 )
 def test_calcular_siguiente_version(request, version_commits):
     """
@@ -107,3 +110,75 @@ def test_calcular_siguiente_version(request, version_commits):
     assert (
         resultado == esperado
     ), f"{version_commits} esperado {esperado}, obtenido {resultado}"
+
+
+def test_generar_changelog_md(tmp_path, changelog_commits):
+    """
+    Verificar que el archivo CHANGELOG.md se genere correctamente
+    en estructura y contenido, usando un fixture de commits y versión.
+    """
+    datos = changelog_commits
+    commits = datos["commits"]
+    version = datos["version"]
+    esperado = datos["esperado"]
+
+    changelog_path = tmp_path / "CHANGELOG.md"
+    cg.generar_changelog_md(commits, version, archivo_salida=str(changelog_path))
+
+    assert changelog_path.exists()
+
+    contenido = changelog_path.read_text(encoding="utf-8")
+    assert f"## {version}" in contenido
+
+    for seccion, descripciones in esperado.items():
+        assert f"### {seccion}" in contenido
+        for descripcion in descripciones:
+            assert f"- {descripcion}" in contenido
+
+
+def test_flujo_liberacion(temp_git_repo):
+    """
+    Simular un flujo completo de liberación y verifica:
+    - que se calculó correctamente la siguiente versión,
+    - que el archivo CHANGELOG.md se generó con la estructura correcta,
+    - que el nuevo tag se creó en el repositorio.
+    """
+    repo_path = temp_git_repo["repo_path"]
+    expected_changelog = temp_git_repo["expected_changelog"]
+    expected_commits = temp_git_repo["expected_commits"]
+    expected_version = temp_git_repo["expected_version"]
+
+    # Paso 1: Obtener commits desde el último tag
+    commits = cg.get_commits_since_last_tag(str(repo_path))
+    assert len(commits) == len(expected_commits)
+
+    # Paso 2: Calcular la siguiente versión
+    repo = Repo(repo_path)
+    version_actual = repo.tags[-1].name
+    siguiente_version = cg.calcular_siguiente_version(commits, version_actual)
+    assert siguiente_version == expected_version
+
+    # Paso 3: Generar changelog
+    changelog_path = repo_path / "CHANGELOG.md"
+    cg.generar_changelog_md(
+        commits, siguiente_version, archivo_salida=str(changelog_path)
+    )
+    assert changelog_path.exists()
+
+    changelog = changelog_path.read_text(encoding="utf-8")
+
+    # Validar que la versión está presente
+    assert f"## {siguiente_version}" in changelog
+
+    # Validar que todas las secciones y descripciones esperadas están
+    for seccion, entradas in expected_changelog.items():
+        assert f"### {seccion}" in changelog
+        for entrada in entradas:
+            assert f"- {entrada}" in changelog
+
+    # Paso 4: Crear nuevo tag
+    cg.crear_tag(str(repo_path), siguiente_version)
+
+    # Validar que el nuevo tag existe en el repo
+    tags = [t.name for t in repo.tags]
+    assert siguiente_version in tags
