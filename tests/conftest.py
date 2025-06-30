@@ -5,40 +5,75 @@ import tempfile
 
 
 @pytest.fixture
-def temp_git_repo_basic() -> dict:
+def temp_git_repo() -> dict:
     """
-    Crea un repo Git temporal con un tag y commits, y devuelve su metadata para validación.
+    Crea un repositorio Git con un tag inicial y commits, incluyendo un BREAKING CHANGE.
+    Devuelve:
+        - ruta del repo,
+        - lista de commits esperados,
+        - estructura de changelog esperada.
     """
-
     tmp_dir = Path(tempfile.mkdtemp())
     repo = Repo.init(tmp_dir)
     file = tmp_dir / "archivo.txt"
 
     commits_info = []
+    changelog_info = {"Features": [], "Bug Fixes": [], "Breaking Changes": []}
+    next_version = "v2.0.0"
 
-    # Commit 1
+    # Commit 1 - inicial con tag
     file.write_text("Inicial")
     repo.index.add([str(file)])
-    commit1 = repo.index.commit("chore: inicial")
+    repo.index.commit("chore: inicial")
     repo.create_tag("v1.0.0")
 
-    # Commit 2
-    file.write_text("Funcionalidad")
+    # Commit 2 - feat
+    file.write_text("Funcionalidad nueva")
     repo.index.add([str(file)])
-    commit2 = repo.index.commit("feat(api): nueva ruta")
+    commit_feat = repo.index.commit("feat(core): agregar endpoint de usuario")
     commits_info.append(
-        {"commit": commit2.hexsha, "tipo": "feat", "descripcion": "nueva ruta"}
+        {
+            "commit": commit_feat.hexsha,
+            "tipo": "feat",
+            "descripcion": "agregar endpoint de usuario",
+        }
     )
+    changelog_info["Features"].append("agregar endpoint de usuario")
 
-    # Commit 3
-    file.write_text("Arreglo")
+    # Commit 3 - fix
+    file.write_text("Arreglo crítico")
     repo.index.add([str(file)])
-    commit3 = repo.index.commit("fix: corregir bug")
+    commit_fix = repo.index.commit("fix: corregir fallo en autenticación")
     commits_info.append(
-        {"commit": commit3.hexsha, "tipo": "fix", "descripcion": "corregir bug"}
+        {
+            "commit": commit_fix.hexsha,
+            "tipo": "fix",
+            "descripcion": "corregir fallo en autenticación",
+        }
     )
+    changelog_info["Bug Fixes"].append("corregir fallo en autenticación")
 
-    return {"repo_path": tmp_dir, "expected_commits": commits_info}
+    # Commit 4 - BREAKING CHANGE
+    file.write_text("Cambio mayor")
+    repo.index.add([str(file)])
+    commit_break = repo.index.commit(
+        "feat!(core): eliminar API obsoleta\n\nSe elimina soporte legacy."
+    )
+    commits_info.append(
+        {
+            "commit": commit_break.hexsha,
+            "tipo": "BREAKING CHANGE",
+            "descripcion": "eliminar API obsoleta",
+        }
+    )
+    changelog_info["Breaking Changes"].append("eliminar API obsoleta")
+
+    return {
+        "repo_path": tmp_dir,
+        "expected_commits": commits_info,
+        "expected_changelog": changelog_info,
+        "expected_version": next_version,
+    }
 
 
 @pytest.fixture
@@ -54,7 +89,7 @@ def temp_git_repo_no_tags(tmp_path) -> Path:
     return repo_path
 
 
-# Tests para probar lógica de generación de tags
+# Fixtures para probar lógica de generación de tags
 @pytest.fixture
 def commits_fix_only():
     return {
@@ -93,4 +128,29 @@ def commits_breaking_change():
         ],
         "tag": "v1.2.3",
         "esperado": "v2.0.0",
+    }
+
+
+# Fixture para probar lógica de generación de commits
+@pytest.fixture
+def changelog_commits():
+    return {
+        "commits": [
+            {"mensaje": {"tipo": "feat", "descripcion": "añadir funcionalidad"}},
+            {"mensaje": {"tipo": "fix", "descripcion": "arreglar error"}},
+            {
+                "mensaje": {
+                    "tipo": "BREAKING CHANGE",
+                    "descripcion": "cambio importante",
+                }
+            },
+            {"mensaje": {"tipo": "docs", "descripcion": "actualizar documentación"}},
+        ],
+        "version": "v1.5.0",
+        "esperado": {
+            "Features": ["añadir funcionalidad"],
+            "Bug Fixes": ["arreglar error"],
+            "Breaking Changes": ["cambio importante"],
+            "Documentation": ["actualizar documentación"],
+        },
     }
