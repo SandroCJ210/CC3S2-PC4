@@ -10,7 +10,7 @@ commit_msg=$(cat "$commit_msg_file")
 
 # expresión regular que define un mensaje válido
 # tipo(scope opcional): descripción
-pattern="^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(\([^)]+\))?: .+"
+pattern="^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: .+"
 
 # validar que el mensaje cumpla con el formato
 if ! echo "$commit_msg" | grep -Eq "$pattern"; then
