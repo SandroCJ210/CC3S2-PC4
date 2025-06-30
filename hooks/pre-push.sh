@@ -10,7 +10,7 @@ commits=$(git log origin/$branch..HEAD --pretty=format:"%s")
 
 # expresión regular que define un mensaje válido
 # tipo(scope opcional): descripción
-pattern="^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(\([^)]+\))?: .+"
+pattern="^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: .+"
 
 # filtrar mensajes que no cumplen con el formato esperado
 invalids=$(echo "$commits" | grep -Ev "$pattern")

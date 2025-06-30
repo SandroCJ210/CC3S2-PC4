@@ -40,6 +40,7 @@ fi
 # Obtener el último tag del repositorio
 ultimo_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
+
 # Si la nueva versión es igual al último tag, permitir reetiquetar
 if [[ "$version" == "$ultimo_tag" ]]; then
     echo "Se detectaron nuevos commits, pero no afectan la versión semántica ($version)"
@@ -85,6 +86,9 @@ if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     echo "Operación cancelada por el usuario."
     exit 0
 fi
+
+# Crear el tag localmente
+git tag "$version"
 
 # Verificar si el tag existe localmente
 if git rev-parse "$version" >/dev/null 2>&1; then

@@ -203,7 +203,10 @@ def calcular_siguiente_version(commits: List[Dict], tag_actual: str) -> str:
     else:
         # Si no hay cambios relevantes, se mantiene la versión
         pass
-
+    
+    print(f"Tag sugerido:")
+    print(f"v{mayor}.{menor}.{parche}")
+    
     return f"v{mayor}.{menor}.{parche}"
 
 def crear_tag(repo_path: str, nueva_version: str):
@@ -298,7 +301,7 @@ if __name__ == "__main__":
     # Generar archivo CHANGELOG.md
     generar_changelog_md(parsed_commits, nueva_version)
     # Crear un nuevo tag Git en el repositorio local con la versión calculada
-    crear_tag(args.dir, nueva_version)
+    #crear_tag(args.dir, nueva_version)
 
     # Calcular métricas de flujo
     calcular_metricas_flujo(parsed_commits, repo=repo)
