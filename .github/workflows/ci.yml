@@ -22,10 +22,6 @@ jobs:
             - name: Instalar dependencias
               run: |
                 pip install -r requirements.txt
-            
-            - name: Ejecutar release_flow.sh
-              run: |
-                bash release_flow.sh
 
             - name: Ejecutar pruebas unitarias
               run: |
