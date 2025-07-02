@@ -31,10 +31,6 @@ jobs:
         run: |
           bash validate_release.sh
 
-      - name: Debug mensaje de éxito
-        if: success()
-        run: echo "CI/CD corrió sin problemas"
-
       - name: Configurar Node.js
         uses: actions/setup-node@4
         with:
@@ -45,3 +41,7 @@ jobs:
 
       - name: Validar con jscpd
           run: jscpd --threshold 30
+
+      - name: Debug mensaje de éxito
+        if: success()
+        run: echo "CI/CD corrió sin problemas"
