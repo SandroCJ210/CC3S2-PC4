@@ -41,8 +41,12 @@ import requests
 
 os.makedirs("logs", exist_ok=True)
 
-logging.basicConfig(filename="logs/logs.log",
-                    formato="%(asctime) - %(levelname) - %(message)")
+logging.basicConfig(
+    filename="logs/logs.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
 
 # Regex para parsear mensajes convencionales de commits.
 COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$'
