@@ -23,7 +23,6 @@ jobs:
           python-version: "3.11"
       
       - name: Debuggear repositorio auxiliar
-        working-directory: /repo-auxiliar
         run: |
           ls
 
