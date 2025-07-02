@@ -11,9 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar repositorio auxiliar
-        run: git clone https://github.com/SandroCJ210/Aux-Repo-PC4 repo-auxiliar
-
       - name: Clonar repositorio
         uses: actions/checkout@v3
 
@@ -21,6 +18,9 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+
+      - name: Clonar repositorio auxiliar
+        run: git clone https://github.com/SandroCJ210/Aux-Repo-PC4 repo-auxiliar
       
       - name: Debuggear repositorio auxiliar
         run: |
@@ -29,18 +29,22 @@ jobs:
       - name: Instalar dependencias en el repositorio actual
         run: |
           pip install -r requirements.txt
+      
+      - name: Instalar dependencias en el repositorio auxiliar
+        run: |
+          pip install -r requirements.txt
 
       - name: Ejecutar pruebas unitarias
         run: |
           pytest tests/
       
       - name: Ejecutar release_flow.sh
-        working-directory: /repo-auxiliar
+        working-directory: ./repo-auxiliar
         run: |
           bash release_flow.sh
 
       - name: Validar seguridad y compliance
-        working-directory: /repo-auxiliar  
+        working-directory: ./repo-auxiliar  
         run: |
           bash validate_release.sh
 
