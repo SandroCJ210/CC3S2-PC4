@@ -51,9 +51,19 @@ logging.basicConfig(
 # Regex para parsear mensajes convencionales de commits.
 COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$'
 
+def alerta_discord(mensaje: str):
+    webhook_url = "https://discord.com/api/webhooks/1390075795065540678/z8bQ59lmHmp4C8xcC5iLeSjl3YtNKw1KncJHj7IQhKcl_6tZpPmeiwBA7g1gdSKRB4oH"
+    payload = {"content": mensaje}
+    try:
+        response = requests.post(webhook_url, json=payload)
+        if response.status_code != 204:
+            logging.warning(f"Alerta Discord fallida: {response.status_code} - {response.text}")
+    except Exception as e:
+        logging.warning(f"No se pudo enviar alerta a Discord: {e}")
+
+
 def alerta_slack(mensaje: str):
-    # Webhook temporal
-    webhook_url = "https://hooks.slack.com/services/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"
+    webhook_url = "https://hooks.slack.com/services/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"
     payload = {"text": mensaje}
     try:
         response = requests.post(webhook_url, json=payload)
@@ -333,9 +343,12 @@ if __name__ == "__main__":
         # Calcular métricas de flujo
         calcular_metricas_flujo(parsed_commits, repo=repo)
         logging.info("Éxito en la generación de CHANGELOG")
+        alerta_slack(f"Éxito en la generación de CHANGELOG")
+        alerta_discord(f"Éxito en la generación de CHANGELOG")
     except Exception as e:
         logging.error(f"Error en la generación de CHANGELOG: {e}")
         alerta_slack(f"Error en la generación de CHANGELOG: {e}")
+        alerta_discord(f"Éxito en la generación de CHANGELOG")
     finally:
         duration = time.perf_counter() - start
         if duration > 15:
