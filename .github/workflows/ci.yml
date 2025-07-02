@@ -37,10 +37,10 @@ jobs:
           node-version: "20"
 
       - name: Instalar jscpd
-          run: npm install -g jscpd
+        run: npm install -g jscpd
 
       - name: Validar con jscpd
-          run: jscpd --threshold 30
+        run: jscpd --threshold 30
 
       - name: Debug mensaje de éxito
         if: success()
