@@ -30,3 +30,11 @@ jobs:
             - name: Ejecutar pruebas unitarias
               run: |
                 pytest tests/
+
+            - name: Validar seguridad y compliance
+              run: |
+                bash validate_release.sh
+            
+            - name: Debug mensaje de éxito
+              if: success()
+              run: echo "CI/CD corrió sin problemas"
