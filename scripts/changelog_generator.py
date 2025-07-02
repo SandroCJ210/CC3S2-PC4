@@ -34,10 +34,31 @@ import sys
 from git import Repo
 from typing import Dict, List
 from collections import defaultdict
+from datetime import datetime
+import logging
+import os
+import time
+import requests
+
+os.makedirs("logs", exist_ok=True)
+
+logging.basicConfig(filename="logs/logs.log",
+                    formato="%(asctime) - %(levelname) - %(message)")
 
 # Regex para parsear mensajes convencionales de commits.
 COMMIT_REGEX = r"^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$"
 
+
+def alerta_slack(mensaje: str):
+    # Webhook temporal
+    webhook_url = "https://hooks.slack.com/services/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"
+    payload = {"text": mensaje}
+    try:
+        response = requests.post(webhook_url, json=payload)
+        if response.status_code != 200:
+            logging.warning(f"Alerta Slack fallida: {response.status_code} - {response.text}")
+    except Exception as e:
+        logging.warning(f"No se pudo enviar alerta a Slack: {e}")
 
 def parse_commit_message(commit_msg: str, commit_hash: str) -> Dict:
     """
@@ -278,50 +299,66 @@ def calcular_metricas_flujo(
 
     print(f"Métricas de flujo guardadas en '{archivo_salida}'")
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-d",
-        "--dir",
-        type=str,
-        default=".",
-        help="Ruta al repositorio Git (por defecto: directorio actual '.')",
-    )
-    parser.add_argument(
-        "-o",
-        "--out",
-        type=str,
-        default="parsed_commits.json",
-        help="Ruta del archivo de salida JSON",
-    )
-    args = parser.parse_args()
+    try:
+        logging.info("Iniciando generación de CHANGELOG")
+        start = time.perf_counter()
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "-d",
+            "--dir",
+            type=str,
+            default=".",
+            help="Ruta al repositorio Git (por defecto: directorio actual '.')",
+        )
+        parser.add_argument(
+            "-o",
+            "--out",
+            type=str,
+            default="parsed_commits.json",
+            help="Ruta del archivo de salida JSON",
+        )
+        args = parser.parse_args()
 
-    # Abrir el repositorio Git
-    repo = Repo(args.dir)
+        # Abrir el repositorio Git
+        repo = Repo(args.dir)
 
-    # Obtener todos los tags ordenados por fecha de creación
-    tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-    # Obtener el último tag existente o usar "v0.0.0" si no hay ninguno
-    ultimo_tag = tags[-1].name if tags else "v0.0.0"
+        # Obtener todos los tags ordenados por fecha de creación
+        tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+        # Obtener el último tag existente o usar "v0.0.0" si no hay ninguno
+        ultimo_tag = tags[-1].name if tags else "v0.0.0"
 
-    # Lectura de commits
-    parsed_commits = get_commits_since_last_tag(args.dir)
-    # Detener si no hay commits nuevos
-    if not parsed_commits:
-        print("No se encontraron commits nuevos. No se generará changelog ni tag.")
-        sys.exit(0)
-    # Guardar commits parseados como JSON
-    with open(args.out, "w", encoding="utf-8") as f:
-        json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
-    print("Commits parseados guardados en", args.out)
+        # Lectura de commits
+        parsed_commits = get_commits_since_last_tag(args.dir)
+        # Detener si no hay commits nuevos
+        if not parsed_commits:
+            print("No se encontraron commits nuevos. No se generará changelog ni tag.")
+            sys.exit(0)
+        # Guardar commits parseados como JSON
+        with open(args.out, "w", encoding="utf-8") as f:
+            json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
+        print("Commits parseados guardados en", args.out)
 
-    # Calcular la siguiente versión del proyecto
-    nueva_version = calcular_siguiente_version(parsed_commits, ultimo_tag)
-    # Generar archivo CHANGELOG.md
-    generar_changelog_md(parsed_commits, nueva_version)
-    # Crear un nuevo tag Git en el repositorio local con la versión calculada
-    # crear_tag(args.dir, nueva_version)
+        # Calcular la siguiente versión del proyecto
+        nueva_version = calcular_siguiente_version(parsed_commits, ultimo_tag)
+        # Generar archivo CHANGELOG.md
+        generar_changelog_md(parsed_commits, nueva_version)
+        # Crear un nuevo tag Git en el repositorio local con la versión calculada
+        # crear_tag(args.dir, nueva_version)
 
-    # Calcular métricas de flujo
-    calcular_metricas_flujo(parsed_commits, repo=repo)
+        # Calcular métricas de flujo
+        calcular_metricas_flujo(parsed_commits, repo=repo)
+        logging.info("Éxito en la generación de CHANGELOG")
+    except Exception as e:
+        logging.error(f"Error en la generación de CHANGELOG: {e}")
+        alerta_slack(f"Error en la generación de CHANGELOG: {e}")
+    finally:
+        duration = time.perf_counter() - start
+        if duration > 15:
+            logging.warning(
+                f"Tiempo de generación de CHANGELOG excesivo: {duration:.2f}s"
+            )
+            alerta_slack(f"Tiempo de generación de CHANGELOG excesivo: {duration:.2f}s")
+        else:
+            logging.info(f"Tiempo de ejecución: {duration:.2f}s")
+
