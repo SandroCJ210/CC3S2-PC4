@@ -34,6 +34,14 @@ from git import Repo
 from typing import Dict, List
 from collections import defaultdict
 from datetime import datetime
+import logging
+import os
+import time
+
+os.makedirs("logs", exist_ok=True)
+
+logging.basicConfig(filename="logs/logs.log",
+                    formato="%(asctime) - %(levelname) - %(message)")
 
 # Regex para parsear mensajes convencionales de commits.
 COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$'
@@ -272,36 +280,45 @@ def calcular_metricas_flujo(parsed_commits: List[Dict], archivo_salida: str = "m
     print(f"Métricas de flujo guardadas en '{archivo_salida}'")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--dir", type=str, default=".", help="Ruta al repositorio Git (por defecto: directorio actual '.')")
-    parser.add_argument("-o", "--out", type=str, default="parsed_commits.json", help="Ruta del archivo de salida JSON")
-    args = parser.parse_args()
+    try:
+        logging.info("Iniciando generación de CHANGELOG")
+        start = time.perf_counter()
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-d", "--dir", type=str, default=".", help="Ruta al repositorio Git (por defecto: directorio actual '.')")
+        parser.add_argument("-o", "--out", type=str, default="parsed_commits.json", help="Ruta del archivo de salida JSON")
+        args = parser.parse_args()
 
-    # Abrir el repositorio Git
-    repo = Repo(args.dir)
+        # Abrir el repositorio Git
+        repo = Repo(args.dir)
 
-    # Obtener todos los tags ordenados por fecha de creación
-    tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-    # Obtener el último tag existente o usar "v0.0.0" si no hay ninguno
-    ultimo_tag = tags[-1].name if tags else "v0.0.0"
+        # Obtener todos los tags ordenados por fecha de creación
+        tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+        # Obtener el último tag existente o usar "v0.0.0" si no hay ninguno
+        ultimo_tag = tags[-1].name if tags else "v0.0.0"
 
-    # Lectura de commits
-    parsed_commits = get_commits_since_last_tag(args.dir)
-    # Detener si no hay commits nuevos
-    if not parsed_commits:
-        print("No se encontraron commits nuevos. No se generará changelog ni tag.")
-        sys.exit(0)
-    # Guardar commits parseados como JSON
-    with open(args.out, "w", encoding="utf-8") as f:
-        json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
-    print("Commits parseados guardados en", args.out)
+        # Lectura de commits
+        parsed_commits = get_commits_since_last_tag(args.dir)
+        # Detener si no hay commits nuevos
+        if not parsed_commits:
+            print("No se encontraron commits nuevos. No se generará changelog ni tag.")
+            sys.exit(0)
+        # Guardar commits parseados como JSON
+        with open(args.out, "w", encoding="utf-8") as f:
+            json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
+        print("Commits parseados guardados en", args.out)
 
-    # Calcular la siguiente versión del proyecto 
-    nueva_version = calcular_siguiente_version(parsed_commits, ultimo_tag)
-    # Generar archivo CHANGELOG.md
-    generar_changelog_md(parsed_commits, nueva_version)
-    # Crear un nuevo tag Git en el repositorio local con la versión calculada
-    #crear_tag(args.dir, nueva_version)
+        # Calcular la siguiente versión del proyecto
+        nueva_version = calcular_siguiente_version(parsed_commits, ultimo_tag)
+        # Generar archivo CHANGELOG.md
+        generar_changelog_md(parsed_commits, nueva_version)
+        # Crear un nuevo tag Git en el repositorio local con la versión calculada
+        #crear_tag(args.dir, nueva_version)
 
-    # Calcular métricas de flujo
-    calcular_metricas_flujo(parsed_commits, repo=repo)
+        # Calcular métricas de flujo
+        calcular_metricas_flujo(parsed_commits, repo=repo)
+        logging.info("Éxito en la generación de CHANGELOG")
+    except Exception as e:
+        logging.error(f"Error en la generación de CHANGELOG: {e}")
+    finally:
+        duration = time.perf_counter() - start
+        logging.info(f"Tiempo de ejecución: {duration:.2f}s")
