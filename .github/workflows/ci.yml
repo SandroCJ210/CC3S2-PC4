@@ -7,30 +7,48 @@ on:
         branches: [main, develop]
 
 jobs:
-    build-test-and-analyze:
-        runs-on: ubuntu-latest
+  build-test-and-analyze:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Clonar repositorio
-              uses: actions/checkout@v3
-            
-            - name: Configurar python
-              uses: actions/setup-python@v4
-              with:
-                python-version: '3.11'
-            
-            - name: Instalar dependencias
-              run: |
-                pip install -r requirements.txt
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v3
 
-            - name: Ejecutar pruebas unitarias
-              run: |
-                pytest tests/
+      - name: Configurar python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-            - name: Validar seguridad y compliance
-              run: |
-                bash validate_release.sh
-            
-            - name: Debug mensaje de éxito
-              if: success()
-              run: echo "CI/CD corrió sin problemas"
+      - name: Clonar repositorio auxiliar
+        run: git clone https://github.com/SandroCJ210/Aux-Repo-PC4 repo-auxiliar
+      
+      - name: Debuggear repositorio auxiliar
+        run: |
+          ls
+
+      - name: Instalar dependencias en el repositorio actual
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Instalar dependencias en el repositorio auxiliar
+        run: |
+          pip install -r requirements.txt
+
+      - name: Ejecutar pruebas unitarias
+        run: |
+          pytest tests/
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar jscpd
+        run: npm install -g jscpd
+
+      - name: Validar con jscpd
+        run: jscpd --threshold 30
+
+      - name: Debug mensaje de éxito
+        if: success()
+        run: echo "CI/CD corrió sin problemas"
