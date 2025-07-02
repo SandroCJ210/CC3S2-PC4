@@ -41,7 +41,7 @@ jobs:
       - name: Ejecutar release_flow.sh
         working-directory: ./repo-auxiliar
         run: |
-          bash release_flow.sh
+          bash release_flow.sh --yes
 
       - name: Validar seguridad y compliance
         working-directory: ./repo-auxiliar  
