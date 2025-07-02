@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: 🔁 Clonar repositorio auxiliar
-        run: git clone https://github.com/usuario/aux-repo.git aux-repo
+        run: git clone https://github.com/SandroCJ210/Aux-Repo-PC4 aux-repo
 
       - name: Clonar repositorio
         uses: actions/checkout@v3
