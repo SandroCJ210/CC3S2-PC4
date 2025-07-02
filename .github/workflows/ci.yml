@@ -21,10 +21,6 @@ jobs:
 
       - name: Clonar repositorio auxiliar
         run: git clone https://github.com/SandroCJ210/Aux-Repo-PC4 repo-auxiliar
-      
-      - name: Debuggear repositorio auxiliar
-        run: |
-          ls
 
       - name: Instalar dependencias en el repositorio actual
         run: |
@@ -37,6 +33,15 @@ jobs:
       - name: Ejecutar pruebas unitarias
         run: |
           pytest tests/
+      
+      - name: Validación de seguridad
+        run: |
+          bash validate_release.sh
+
+      - name: Ejecutar validación en el repositorio auxiliar
+        working-directory: repo-auxiliar
+        run: |
+          bash validate_aux_repo.sh
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
