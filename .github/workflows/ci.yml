@@ -1,0 +1,21 @@
+name: CI/CD pipeline
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+
+jobs:
+    build-test-and-analyze:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Clonar repositorio
+              uses: actions/checkout@v3
+            
+            - name: Configurar python
+              uses: actions/setup-python@v4
+              with:
+                python-version: '3.11'
+            
