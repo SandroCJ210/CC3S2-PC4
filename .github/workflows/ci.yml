@@ -1,0 +1,36 @@
+name: CI/CD pipeline
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+
+jobs:
+    build-test-and-analyze:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Clonar repositorio
+              uses: actions/checkout@v3
+            
+            - name: Configurar python
+              uses: actions/setup-python@v4
+              with:
+                python-version: '3.11'
+            
+            - name: Instalar dependencias
+              run: |
+                pip install -r requirements.txt
+
+            - name: Ejecutar pruebas unitarias
+              run: |
+                pytest tests/
+
+            - name: Validar seguridad y compliance
+              run: |
+                bash validate_release.sh
+            
+            - name: Debug mensaje de éxito
+              if: success()
+              run: echo "CI/CD corrió sin problemas"
