@@ -334,4 +334,8 @@ if __name__ == "__main__":
         alerta_slack(f"Error en la generación de CHANGELOG: {e}")
     finally:
         duration = time.perf_counter() - start
-        logging.info(f"Tiempo de ejecución: {duration:.2f}s")
+        if duration > 15:
+            logging.warning(f"Tiempo de generación de CHANGELOG excesivo: {duration:.2f}s")
+            alerta_slack(f"Tiempo de generación de CHANGELOG excesivo: {duration:.2f}s")
+        else:
+            logging.info(f"Tiempo de ejecución: {duration:.2f}s")
