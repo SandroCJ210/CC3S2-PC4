@@ -6,7 +6,7 @@
 set -e  
 
 # Ruta al repositorio y script principal
-REPO_DIR="."
+REPO_DIR="../aux-repo"
 SCRIPT="scripts/changelog_generator.py"
 
 # Ejecutar el script Python para generar el changelog y la versión
@@ -44,7 +44,7 @@ ultimo_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 # Si la nueva versión es igual al último tag, permitir reetiquetar
 if [[ "$version" == "$ultimo_tag" ]]; then
     echo "Se detectaron nuevos commits, pero no afectan la versión semántica ($version)"
-    read -p "¿Deseas reetiquetar '$version' al nuevo commit? [y/N]: " retag
+    read -r -p "¿Deseas reetiquetar '$version' al nuevo commit? [y/N]: " retag
     if [[ "$retag" =~ ^[Yy]$ ]]; then
         # Reemplazar el tag local por uno apuntando al nuevo commit
         git tag -d "$version"
@@ -53,7 +53,7 @@ if [[ "$version" == "$ultimo_tag" ]]; then
 
         # Verificar si el tag ya existe en el remoto
         if git ls-remote --tags origin | grep -q "refs/tags/$version"; then
-            read -p "El tag ya existe en remoto. ¿Deseas forzar el push? [y/N]: " force_push
+            read -r -p "El tag ya existe en remoto. ¿Deseas forzar el push? [y/N]: " force_push
             if [[ "$force_push" =~ ^[Yy]$ ]]; then
                 git push --force origin "$version"
                 echo "Tag actualizado y forzado en remoto."
@@ -81,7 +81,7 @@ echo "Versión sugerida por el script: $version"
 echo ""
 
 # Confirmar si se desea hacer push del tag
-read -p "¿Deseas continuar y pushear el tag '$version'? [y/N]: " confirm
+read -r -p "¿Deseas continuar y pushear el tag '$version'? [y/N]: " confirm
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     echo "Operación cancelada por el usuario."
     exit 0
@@ -101,7 +101,7 @@ fi
 # Verificar si el tag existe en el remoto
 if git ls-remote --tags origin | grep -q "refs/tags/$version"; then
     echo "El tag '$version' ya existe en el repositorio remoto."
-    read -p "¿Deseas forzar el push del tag local para que apunte al último commit? [y/N]: " force_push
+    read -r -p "¿Deseas forzar el push del tag local para que apunte al último commit? [y/N]: " force_push
     if [[ "$force_push" != "y" && "$force_push" != "Y" ]]; then
         echo "Push cancelado por el usuario."
         exit 0

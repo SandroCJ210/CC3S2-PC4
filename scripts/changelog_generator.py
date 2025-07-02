@@ -28,15 +28,16 @@ import json
 import re
 import argparse
 import sys
+
 # Se utiliza la librería GitPython para interactuar con los repositorios a través de una API.
 # De esta forma se evita trabajar directamente con comandos git en subprocesos.
 from git import Repo
 from typing import Dict, List
 from collections import defaultdict
-from datetime import datetime
 
 # Regex para parsear mensajes convencionales de commits.
-COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$'
+COMMIT_REGEX = r"^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$"
+
 
 def parse_commit_message(commit_msg: str, commit_hash: str) -> Dict:
     """
@@ -78,9 +79,10 @@ def parse_commit_message(commit_msg: str, commit_hash: str) -> Dict:
             "tipo": tipo,
             "escopo": escopo,
             "descripcion": descripcion,
-            "cuerpo": body or None
-        }
+            "cuerpo": body or None,
+        },
     }
+
 
 def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
     """
@@ -112,13 +114,16 @@ def get_commits_since_last_tag(repo_path=".") -> List[Dict]:
         print(f"No hay commits nuevos desde el último tag ({last_tag}).")
         return parsed_commits
     else:
-        for commit in reversed(commits): 
+        for commit in reversed(commits):
             parsed = parse_commit_message(commit.message, commit.hexsha)
             parsed_commits.append(parsed)
 
     return parsed_commits
 
-def generar_changelog_md(parsed_commits: List[Dict], version: str, archivo_salida: str = "CHANGELOG.md") -> None:
+
+def generar_changelog_md(
+    parsed_commits: List[Dict], version: str, archivo_salida: str = "CHANGELOG.md"
+) -> None:
     """
     Genera un archivo CHANGELOG.md agrupado por tipo de commit.
 
@@ -127,7 +132,7 @@ def generar_changelog_md(parsed_commits: List[Dict], version: str, archivo_salid
     parsed_commits : List[Dict]
         Lista de commits parseados
     vesrion: str
-        Nueva versión 
+        Nueva versión
     archivo_salida : str
         Nombre del archivo markdown de salida
     """
@@ -144,7 +149,7 @@ def generar_changelog_md(parsed_commits: List[Dict], version: str, archivo_salid
         "build": "### Build",
         "revert": "### Reverts",
         "BREAKING CHANGE": "### Breaking Changes",
-        "otro": "### Others"
+        "otro": "### Others",
     }
 
     # Agrupar los commits por tipo
@@ -160,13 +165,14 @@ def generar_changelog_md(parsed_commits: List[Dict], version: str, archivo_salid
         if tipo in agrupados:
             md_lines.append(tipo_to_titulo[tipo])
             md_lines.extend(agrupados[tipo])
-            md_lines.append("")  
+            md_lines.append("")
 
     # Escribir el archivo
     with open(archivo_salida, "w", encoding="utf-8") as f:
         f.write("\n".join(md_lines))
 
     print(f"Changelog generado en '{archivo_salida}'")
+
 
 def calcular_siguiente_version(commits: List[Dict], tag_actual: str) -> str:
     """
@@ -177,12 +183,12 @@ def calcular_siguiente_version(commits: List[Dict], tag_actual: str) -> str:
     commits : List[Dict]
         Lista de commits parseados desde el último tag
     tag_actual : str
-        Último tag encontrado en el repositorio 
-    
+        Último tag encontrado en el repositorio
+
     Retorna
     -------
     str
-        La siguiente versión sugerida 
+        La siguiente versión sugerida
     """
     mayor, menor, parche = map(int, tag_actual.lstrip("v").split("."))
 
@@ -203,11 +209,12 @@ def calcular_siguiente_version(commits: List[Dict], tag_actual: str) -> str:
     else:
         # Si no hay cambios relevantes, se mantiene la versión
         pass
-    
-    print(f"Tag sugerido:")
+
+    print("Tag sugerido:")
     print(f"v{mayor}.{menor}.{parche}")
-    
+
     return f"v{mayor}.{menor}.{parche}"
+
 
 def crear_tag(repo_path: str, nueva_version: str):
     """
@@ -216,7 +223,7 @@ def crear_tag(repo_path: str, nueva_version: str):
     Argumentos
     ----------
     repo_path : str
-        Ruta al repositorio Git 
+        Ruta al repositorio Git
     nueva_version : str
         Nombre del tag a crear
     """
@@ -228,7 +235,10 @@ def crear_tag(repo_path: str, nueva_version: str):
     repo.create_tag(nueva_version)
     print(f"Tag '{nueva_version}' creado.")
 
-def calcular_metricas_flujo(parsed_commits: List[Dict], archivo_salida: str = "metrics.json", repo: Repo = None):
+
+def calcular_metricas_flujo(
+    parsed_commits: List[Dict], archivo_salida: str = "metrics.json", repo: Repo = None
+):
     """
     Calcula métricas de flujo del proyecto a partir de los commits obtenidos desde el último tag.
 
@@ -246,24 +256,21 @@ def calcular_metricas_flujo(parsed_commits: List[Dict], archivo_salida: str = "m
         Objeto que representa al repositorio.
     """
 
-    fechas = [
-        repo.commit(c["commit"]).committed_datetime
-        for c in parsed_commits
-    ]
+    fechas = [repo.commit(c["commit"]).committed_datetime for c in parsed_commits]
     fecha_inicio = min(fechas)
     fecha_fin = max(fechas)
 
     dias_rango = (fecha_fin - fecha_inicio).days or 1
     throughput = len(parsed_commits) / dias_rango
     tipo_distribution = defaultdict(int)
-    
+
     for commit in parsed_commits:
         tipo = commit["mensaje"]["tipo"]
         tipo_distribution[tipo] += 1
 
     metricas = {
         "throughput_commits_por_dia": round(throughput, 2),
-        "task_distribution": dict(tipo_distribution)
+        "task_distribution": dict(tipo_distribution),
     }
 
     with open(archivo_salida, "w", encoding="utf-8") as f:
@@ -271,10 +278,23 @@ def calcular_metricas_flujo(parsed_commits: List[Dict], archivo_salida: str = "m
 
     print(f"Métricas de flujo guardadas en '{archivo_salida}'")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--dir", type=str, default=".", help="Ruta al repositorio Git (por defecto: directorio actual '.')")
-    parser.add_argument("-o", "--out", type=str, default="parsed_commits.json", help="Ruta del archivo de salida JSON")
+    parser.add_argument(
+        "-d",
+        "--dir",
+        type=str,
+        default=".",
+        help="Ruta al repositorio Git (por defecto: directorio actual '.')",
+    )
+    parser.add_argument(
+        "-o",
+        "--out",
+        type=str,
+        default="parsed_commits.json",
+        help="Ruta del archivo de salida JSON",
+    )
     args = parser.parse_args()
 
     # Abrir el repositorio Git
@@ -296,12 +316,12 @@ if __name__ == "__main__":
         json.dump(parsed_commits, f, indent=2, ensure_ascii=False)
     print("Commits parseados guardados en", args.out)
 
-    # Calcular la siguiente versión del proyecto 
+    # Calcular la siguiente versión del proyecto
     nueva_version = calcular_siguiente_version(parsed_commits, ultimo_tag)
     # Generar archivo CHANGELOG.md
     generar_changelog_md(parsed_commits, nueva_version)
     # Crear un nuevo tag Git en el repositorio local con la versión calculada
-    #crear_tag(args.dir, nueva_version)
+    # crear_tag(args.dir, nueva_version)
 
     # Calcular métricas de flujo
     calcular_metricas_flujo(parsed_commits, repo=repo)
