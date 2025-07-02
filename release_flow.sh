@@ -6,7 +6,7 @@
 set -e  
 
 # Ruta al repositorio y script principal
-REPO_DIR="../aux-repo"
+REPO_DIR="."
 SCRIPT="scripts/changelog_generator.py"
 
 # Ejecutar el script Python para generar el changelog y la versión
