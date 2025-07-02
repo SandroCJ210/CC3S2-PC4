@@ -26,11 +26,6 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Instalar dependencias en el repositorio auxiliar
-        working-directory: ./aux-repo
-        run: |
-          pip install -r requirements.txt
-
       - name: Ejecutar pruebas unitarias
         run: |
           pytest tests/
@@ -39,7 +34,7 @@ jobs:
         working-directory: ./aux-repo
         run: |
           bash release_flow.sh
-          
+
       - name: Validar seguridad y compliance
         working-directory: ./aux-repo
         run: |
