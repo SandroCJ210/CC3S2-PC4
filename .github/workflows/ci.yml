@@ -23,10 +23,10 @@ jobs:
           python-version: "3.11"
       
       - name: Debuggear repositorio auxiliar
-        working-directory: ./repo-auxiliar
+        working-directory: /repo-auxiliar
         run: |
           ls
-          
+
       - name: Instalar dependencias en el repositorio actual
         run: |
           pip install -r requirements.txt
