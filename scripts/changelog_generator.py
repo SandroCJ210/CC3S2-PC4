@@ -37,6 +37,7 @@ from datetime import datetime
 import logging
 import os
 import time
+import requests
 
 os.makedirs("logs", exist_ok=True)
 
@@ -45,6 +46,17 @@ logging.basicConfig(filename="logs/logs.log",
 
 # Regex para parsear mensajes convencionales de commits.
 COMMIT_REGEX = r'^(feat|fix|chore|docs|refactor|test|style|perf|ci|build|revert)(!)?(\([^)]+\))?: (.+)$'
+
+def alerta_slack(mensaje: str):
+    # Webhook temporal
+    webhook_url = "https://hooks.slack.com/services/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"
+    payload = {"text": mensaje}
+    try:
+        response = requests.post(webhook_url, json=payload)
+        if response.status_code != 200:
+            logging.warning(f"Alerta Slack fallida: {response.status_code} - {response.text}")
+    except Exception as e:
+        logging.warning(f"No se pudo enviar alerta a Slack: {e}")
 
 def parse_commit_message(commit_msg: str, commit_hash: str) -> Dict:
     """
@@ -319,6 +331,7 @@ if __name__ == "__main__":
         logging.info("Éxito en la generación de CHANGELOG")
     except Exception as e:
         logging.error(f"Error en la generación de CHANGELOG: {e}")
+        alerta_slack(f"Error en la generación de CHANGELOG: {e}")
     finally:
         duration = time.perf_counter() - start
         logging.info(f"Tiempo de ejecución: {duration:.2f}s")
