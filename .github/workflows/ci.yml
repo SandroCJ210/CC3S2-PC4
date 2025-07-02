@@ -21,7 +21,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-
+      
+      - name: Debuggear repositorio auxiliar
+        working-directory: ./repo-auxiliar
+        run: |
+          ls
+          
       - name: Instalar dependencias en el repositorio actual
         run: |
           pip install -r requirements.txt
@@ -31,12 +36,12 @@ jobs:
           pytest tests/
       
       - name: Ejecutar release_flow.sh
-        working-directory: ./repo-auxiliar
+        working-directory: /repo-auxiliar
         run: |
           bash release_flow.sh
 
       - name: Validar seguridad y compliance
-        working-directory: ./repo-auxiliar
+        working-directory: /repo-auxiliar  
         run: |
           bash validate_release.sh
 
