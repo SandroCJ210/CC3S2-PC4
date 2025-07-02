@@ -37,7 +37,16 @@ jobs:
       - name: Ejecutar pruebas unitarias
         run: |
           pytest tests/
+      
+      - name: Validación de seguridad
+        run: |
+          bash validate_release.sh
 
+      - name: Ejecutar validación en el repositorio auxiliar
+        working-directory: repo-auxiliar
+        run: |
+          bash validate_aux_repo.sh
+          
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
